@@ -1,0 +1,72 @@
+// we start by defining the boder of our two subdomains
+
+
+int inside=99, outside=98;
+real norm = 1;
+
+border O11(t=0,2){ x=t; y=0; label=outside;};
+border O12(t=0,1){ x=2; y=t; label=outside;};
+border O131(t=0,1){ x=2-t; y=1; label = outside;};
+border O132(t=0,1){ x=1-t; y=1; label = inside;};
+border O14(t=0,1){ x=0; y=1-t; label = outside;};
+
+border O21(t=0,1){ x=t; y=0; label=outside;};
+border O221(t=0,1){ x=1; y=t; label=inside;};
+border O222(t=0,1){ x=1; y=1+t; label=outside;};
+border O23(t=0,1){ x=1-t; y=2; label=outside;};
+border O24(t=0,2){ x=0; y=2-t; label=outside;};
+
+\\ We plot our domains
+
+plot( O11(2) + O12(3) + O131(2)+O132(2) +O14(3) + O21(-2) + O221(-3)+O222(-3) + O23(-2) + O24(-3),wait=true,ps="bords.edp");
+
+\\ We mesh the two domains
+\\ n is the number of point on one border to make the meshing
+
+int n =30;
+
+mesh Th1=buildmesh( O11(2*n) + O12(n) + O131(n)+O132(n) + O14(n));
+
+mesh Th2=buildmesh( O21(n) + O221(n)+O222(n) + O23(n) + O24(2*n));
+
+plot(Th1,Th2,wait=1);
+
+\\ We define the space of the two domains
+
+fespace Vh1(Th1,P1);
+fespace Vh2(Th2,P1);
+
+\\ We define the the fonctions inside the domains and on the border between the two
+
+Vh1 u,v,un;
+Vh2 U,V,Un;
+func f = x*y^2;
+real cpu=clock();
+
+\\ We initialize and define the tresh for the precision
+
+int epsilon = 10^(-3);
+u=0;
+U=0;
+
+\\ We solve the Poisson equation on the domains
+
+while(norm > epsilon){
+	un =u;
+	solve Poisson1(u,v,solver=LU) = 
+		int2d(Th1)(dx(u)*dx(v) + dy(u)*dy(v))
+		- int2d(Th1)(f*v)
+		+ on(outside, u=0) + on(inside, u=U);
+	Un=U;
+	solve Poisson2(U,V,solver=LU) = 
+		int2d(Th2)(dx(U)*dx(V) + dy(U)*dy(V))
+		- int2d(Th2)(f*V)
+		+ on(outside, U=0) + on(inside, U=u);
+	norm = sqrt(int2d(Th1)((u-un)^2) + int2d(Th2)((U-Un)^2));
+	plot(u,U,wait=1);
+}
+plot(u,U,wait = 1);
+
+
+
+cout << " CPU time = " << clock()-cpu << endl;
