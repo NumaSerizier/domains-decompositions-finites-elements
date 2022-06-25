@@ -1,4 +1,4 @@
-# domains_decompositions_finites_elements
+# domains-decompositions-finites-elements
 
 We gonna separate our elements in two domains.
 We will use finite elements on the two doamins.
