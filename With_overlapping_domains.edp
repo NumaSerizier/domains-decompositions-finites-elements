@@ -16,12 +16,12 @@ border O222(t=0,1){ x=1; y=1+t; label=outside;};
 border O23(t=0,1){ x=1-t; y=2; label=outside;};
 border O24(t=0,2){ x=0; y=2-t; label=outside;};
 
-\\ We plot our domains
+// We plot our domains
 
 plot( O11(2) + O12(3) + O131(2)+O132(2) +O14(3) + O21(-2) + O221(-3)+O222(-3) + O23(-2) + O24(-3),wait=true,ps="bords.edp");
 
-\\ We mesh the two domains
-\\ n is the number of point on one border to make the meshing
+// We mesh the two domains
+// n is the number of point on one border to make the meshing
 
 int n =30;
 
@@ -31,25 +31,25 @@ mesh Th2=buildmesh( O21(n) + O221(n)+O222(n) + O23(n) + O24(2*n));
 
 plot(Th1,Th2,wait=1);
 
-\\ We define the space of the two domains
+// We define the space of the two domains
 
 fespace Vh1(Th1,P1);
 fespace Vh2(Th2,P1);
 
-\\ We define the the fonctions inside the domains and on the border between the two
+// We define the the fonctions inside the domains and on the border between the two
 
 Vh1 u,v,un;
 Vh2 U,V,Un;
 func f = x*y^2;
 real cpu=clock();
 
-\\ We initialize and define the tresh for the precision
+// We initialize and define the tresh for the precision
 
 int epsilon = 10^(-3);
 u=0;
 U=0;
 
-\\ We solve the Poisson equation on the domains
+// We solve the Poisson equation on the domains
 
 while(norm > epsilon){
 	un =u;
