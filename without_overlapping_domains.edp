@@ -1,72 +1,66 @@
-// we start by defining the boder of our two subdomains
+// n is the number of mesh for each border
 
 
-int inside=99, outside=98;
-real norm = 1;
+int n =10;
+int O1 = 99; int O2=98; int gamma = 100;
+int M=20,i;
+real cond = 1;
+real theta = 0.5;
+real norm=1;
+real epsilon = 10^(-2);
 
-border O11(t=0,2){ x=t; y=0; label=outside;};
-border O12(t=0,1){ x=2; y=t; label=outside;};
-border O131(t=0,1){ x=2-t; y=1; label = outside;};
-border O132(t=0,1){ x=1-t; y=1; label = inside;};
-border O14(t=0,1){ x=0; y=1-t; label = outside;};
+// Creating the borders
 
-border O21(t=0,1){ x=t; y=0; label=outside;};
-border O221(t=0,1){ x=1; y=t; label=inside;};
-border O222(t=0,1){ x=1; y=1+t; label=outside;};
-border O23(t=0,1){ x=1-t; y=2; label=outside;};
-border O24(t=0,2){ x=0; y=2-t; label=outside;};
+border O11(t=0,2){ x=t; y=0; label=O1;};
+border O12(t=0,1){ x=2; y=t; label=O1;};
+border O13(t=0,1){ x=2-t; y=1; label=O1;};
+border O14(t=0,1){ x=1-t; y=1-t; label=gamma;};
 
-\\ We plot our domains
+//border O21(t=0,1){ x=t; y=t; label=O2;};
+border O22(t=0,1){ x=1; y=1+t; label=O2;};
+border O23(t=0,1){ x=1-t; y=2; label=O2;};
+border O24(t=0,2){ x=0; y=2-t; label=O2;};
 
-plot( O11(2) + O12(3) + O131(2)+O132(2) +O14(3) + O21(-2) + O221(-3)+O222(-3) + O23(-2) + O24(-3),wait=true,ps="bords.edp");
+plot( O11(1) + O12(1) + O13(1) +O14(1) + O22(1) + O23(1) + O24(1),wait = true);
 
-\\ We mesh the two domains
-\\ n is the number of point on one border to make the meshing
+// Meshing
 
-int n =30;
-
-mesh Th1=buildmesh( O11(2*n) + O12(n) + O131(n)+O132(n) + O14(n));
-
-mesh Th2=buildmesh( O21(n) + O221(n)+O222(n) + O23(n) + O24(2*n));
+mesh Th1=buildmesh( O11(2*n) + O12(n) + O13(n) + O14(2*n));
+mesh Th2=buildmesh( O14(-2*n) + O22(n) + O23(n) + O24(2*n));
 
 plot(Th1,Th2,wait=1);
 
-\\ We define the space of the two domains
+// defining the domains
 
-fespace Vh1(Th1,P1);
-fespace Vh2(Th2,P1);
+fespace Vh1(Th1,P2);
+fespace Vh2(Th2,P2);
 
-\\ We define the the fonctions inside the domains and on the border between the two
+Vh1 u,v,u0,g;
+Vh2 U,V,U0;
 
-Vh1 u,v,un;
-Vh2 U,V,Un;
-func f = x*y^2;
-real cpu=clock();
+U=0; u=0;
+func f=x*y^2;
 
-\\ We initialize and define the tresh for the precision
+// more complicated function
+//func f=sin(2*pi*x)*sin(2*pi*y);
 
-int epsilon = 10^(-3);
-u=0;
-U=0;
-
-\\ We solve the Poisson equation on the domains
-
-while(norm > epsilon){
-	un =u;
-	solve Poisson1(u,v,solver=LU) = 
+for(i=0;i<M;i++){
+	u0=u;
+	solve Poisson1(u,v,solver=LU) =
 		int2d(Th1)(dx(u)*dx(v) + dy(u)*dy(v))
 		- int2d(Th1)(f*v)
-		+ on(outside, u=0) + on(inside, u=U);
-	Un=U;
-	solve Poisson2(U,V,solver=LU) = 
+		+ on(O1, u=0) + on(gamma, u=g);
+	
+	U0=U;
+	solve Poisson2(U,V,solver=LU) =
 		int2d(Th2)(dx(U)*dx(V) + dy(U)*dy(V))
-		- int2d(Th2)(f*V)
-		+ on(outside, U=0) + on(inside, U=u);
-	norm = sqrt(int2d(Th1)((u-un)^2) + int2d(Th2)((U-Un)^2));
+		- int2d(Th2)(f*V) - int1d(Th2,gamma)((dx(u)*N.x + dy(u)*N.y)*V)
+		+ on(O2, U=0);
+	
+	norm = sqrt(int2d(Th1)((u-u0)^2) + int2d(Th2)((U-U0)^2));
+	g = theta*U + (1-theta)*g;
 	plot(u,U,wait=1);
 }
-plot(u,U,wait = 1);
 
+plot(u,U,wait=1);
 
-
-cout << " CPU time = " << clock()-cpu << endl;
